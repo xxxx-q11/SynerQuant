@@ -1,0 +1,83 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+env/
+ENV/
+.venv
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment variables and config
+config/env.yaml
+.env
+.env.local
+
+# Data files
+*.csv
+*.xlsx
+*.xls
+data/*.bin
+data/*.h5
+*.h5
+*.pkl
+*.pickle
+
+# Logs
+*.log
+logs/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*.ipynb
+
+# Qlib data
+Qlib_MCP/workspace/qlib_benchmark/factor_pools/
+Qlib_MCP/workspace/factors/
+Qlib_MCP/workspace/news_data/
+Qlib_MCP/knowledge_base/qdrant_data/
+
+# Docker
+.dockerignore
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+

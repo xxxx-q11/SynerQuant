@@ -1,0 +1,12 @@
+numpy
+pandas
+xgboost
+scikit_learn
+seaborn
+setuptools_scm 
+tensorflow  # 支持 Python 3.10 的最低版本
+lightgbm
+catboost
+mcp 
+#mcp-client
+pyqlib>=0.9.6

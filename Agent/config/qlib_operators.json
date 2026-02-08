@@ -1,0 +1,85 @@
+{
+  "qlib_operators": {
+    "source_file": "qlib-main/qlib/data/ops.py",
+    "additional_files": [
+      "qlib-main/qlib/data/pit.py",
+      "qlib-main/qlib/data/base.py"
+    ],
+    "operators": {
+      "element_wise": [
+        {"name": "Abs", "description": "绝对值", "class": "NpElemOperator", "parameters": ["feature"]},
+        {"name": "Sign", "description": "符号函数", "class": "NpElemOperator", "parameters": ["feature"]},
+        {"name": "Log", "description": "对数", "class": "NpElemOperator", "parameters": ["feature"]},
+        {"name": "Not", "description": "逻辑非", "class": "NpElemOperator", "parameters": ["feature"]},
+        {"name": "Mask", "description": "掩码操作", "class": "NpElemOperator", "parameters": ["feature", "instrument"]},
+        {"name": "ChangeInstrument", "description": "改变标的", "class": "ElemOperator", "parameters": ["instrument", "feature"]}
+      ],
+      "binary": [
+        {"name": "Add", "description": "加法", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Sub", "description": "减法", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Mul", "description": "乘法", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Div", "description": "除法", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Power", "description": "幂运算", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Greater", "description": "取较大值", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Less", "description": "取较小值", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Gt", "description": "大于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Ge", "description": "大于等于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Lt", "description": "小于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Le", "description": "小于等于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Eq", "description": "等于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Ne", "description": "不等于比较", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "And", "description": "逻辑与", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]},
+        {"name": "Or", "description": "逻辑或", "class": "NpPairOperator", "parameters": ["feature_left", "feature_right"]}
+      ],
+      "ternary": [
+        {"name": "If", "description": "条件选择", "class": "ExpressionOps", "parameters": ["condition", "feature_left", "feature_right"]}
+      ],
+      "rolling": [
+        {"name": "Ref", "description": "引用（延迟/提前N期）", "class": "Rolling", "parameters": ["feature", "N"], "note": "N=0返回首日数据，N>0返回N期前数据，N<0返回未来数据"},
+        {"name": "Mean", "description": "滚动均值", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Sum", "description": "滚动求和", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Std", "description": "滚动标准差", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Var", "description": "滚动方差", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Skew", "description": "滚动偏度", "class": "Rolling", "parameters": ["feature", "N"], "constraint": "N >= 3"},
+        {"name": "Kurt", "description": "滚动峰度", "class": "Rolling", "parameters": ["feature", "N"], "constraint": "N >= 4"},
+        {"name": "Max", "description": "滚动最大值", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Min", "description": "滚动最小值", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Med", "description": "滚动中位数", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Mad", "description": "滚动平均绝对偏差", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Rank", "description": "单只股票时间序列上的滚动排名（百分位）", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Quantile", "description": "滚动分位数", "class": "Rolling", "parameters": ["feature", "N", "qscore"]},
+        {"name": "Count", "description": "滚动非NaN元素计数", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Delta", "description": "滚动窗口内首尾差值", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Slope", "description": "滚动线性回归斜率", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Rsquare", "description": "滚动线性回归R方", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "Resi", "description": "滚动回归残差", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "WMA", "description": "加权移动平均", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "EMA", "description": "指数移动平均", "class": "Rolling", "parameters": ["feature", "N"], "note": "支持N为整数或0-1之间的浮点数（alpha）"},
+        {"name": "IdxMax", "description": "滚动窗口内最大值索引", "class": "Rolling", "parameters": ["feature", "N"]},
+        {"name": "IdxMin", "description": "滚动窗口内最小值索引", "class": "Rolling", "parameters": ["feature", "N"]}
+      ],
+      "pair_rolling": [
+        {"name": "Corr", "description": "滚动相关系数", "class": "PairRolling", "parameters": ["feature_left", "feature_right", "N"]},
+        {"name": "Cov", "description": "滚动协方差", "class": "PairRolling", "parameters": ["feature_left", "feature_right", "N"]}
+      ],
+      "time_resample": [
+        {"name": "TResample", "description": "时间重采样", "class": "TResample", "parameters": ["feature", "freq", "func"]}
+      ],
+      "pit_operators": [
+        {"name": "P", "description": "点对时数据聚合", "file": "qlib-main/qlib/data/pit.py", "parameters": ["feature"]},
+        {"name": "PRef", "description": "点对时数据引用", "file": "qlib-main/qlib/data/pit.py", "parameters": ["feature", "period"]}
+      ],
+      "base_features": [
+        {"name": "Feature", "description": "基础特征", "class": "Feature"},
+        {"name": "PFeature", "description": "点对时基础特征", "class": "PFeature"}
+      ]
+    },
+    "total_count": 50,
+    "notes": {
+      "rolling_window": "N=0表示expanding（扩展窗口），0<N<1表示EWM（指数加权），N>=1表示rolling（滚动窗口）",
+      "registration": "所有操作符通过Operators对象统一管理，可通过register_all_ops函数注册",
+      "custom_ops": "支持通过配置custom_ops注册自定义操作符"
+    }
+  }
+}
+

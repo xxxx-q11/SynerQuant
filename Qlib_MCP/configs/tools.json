@@ -1,0 +1,465 @@
+{
+  "categories": [
+    {
+      "tool_type": "Model Training",
+      "description": "Trains and manages quant models and benchmark experiments (XGBoost/LightGBM/GRU/LSTM/Transformer/AlphaSAGE, etc.). Not for ad-hoc indicator calculation or raw data crawling; requires prepared datasets and YAML/config-driven workflows.",
+      "tools": [
+        {
+          "name": "train_qcm",
+          "description": "AlphaQCM training tool. Quantile-based distributional RL for Alpha mining. Supports QRDQN, IQN, FQF architectures; learns and optimizes Alpha factors via RL. Runs asynchronously with task/log queries.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "model": {
+                "type": "string",
+                "enum": ["qrdqn", "iqn", "fqf"],
+                "default": "iqn",
+                "description": "Model type. qrdqn: Quantile Regression DQN; iqn: Implicit Quantile Networks; fqf: Fully Quantile Function."
+              },
+              "seed": {
+                "type": "integer",
+                "default": 0,
+                "minimum": 0,
+                "description": "Random seed for reproducibility."
+              },
+              "pool": {
+                "type": "integer",
+                "default": 100,
+                "minimum": 1,
+                "description": "Alpha pool capacity (number of factors maintained). Suggested: 10/20/50/100."
+              },
+              "std_lam": {
+                "type": "number",
+                "default": 1.0,
+                "exclusiveMinimum": 0,
+                "description": "Std lambda parameter controlling distribution shape. Suggested: 0.5/1.0/2.0."
+              },
+              "instruments": {
+                "type": "string",
+                "default": "csi300",
+                "description": "Stock universe, e.g., csi300/csi500/csi800/csi1000/csiall/sp500."
+              },
+              "train_end_year": {
+                "type": "integer",
+                "default": 2020,
+                "minimum": 2000,
+                "maximum": 2030,
+                "description": "Training end year. Used to determine train/valid/test time splits."
+              },
+              "task_name": {
+                "type": "string",
+                "default": "training",
+                "minLength": 1,
+                "maxLength": 100,
+                "description": "Task name for identifying the training job."
+              }
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."}
+            },
+            "description": "Training launch info. Runs asynchronously; task/logs can be queried."
+          },
+          "example": {
+            "model": "qrdqn",
+            "seed": 42,
+            "pool": 20,
+            "std_lam": 1.0,
+            "instruments": "csi300",
+            "train_end_year": 2020,
+            "task_name": "qrdqn_training_2024"
+          }
+        },
+        {
+          "name": "train_AFF",
+          "description": "AlphaForge training tool. GAN-based Alpha factor generation; learns market distributions to generate predictive factors. Runs synchronously in AlphaSAGE Docker container via Docker Compose.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_file": {"type": "string", "description": "Config file path (optional). If provided, overrides with file params; else use config_params."},
+              "config_params": {
+                "type": "object",
+                "description": "Optional training parameter dict: instruments, train_end_year, seed, cuda, save_name, zoo_size, corr_thresh, ic_thresh, icir_thresh, etc.",
+                "properties": {
+                  "instruments": {"type": "string", "description": "Universe, e.g., csi300/csi500.", "default": "csi300"},
+                  "train_end_year": {"type": "integer", "description": "Training end year.", "default": 2020},
+                  "seed": {"type": "integer", "description": "Random seed.", "default": 0},
+                  "cuda": {"type": "string", "description": "CUDA device ID, e.g., \"0\".", "default": "5"},
+                  "save_name": {"type": "string", "description": "Model save name prefix.", "default": "test"},
+                  "zoo_size": {"type": "integer", "description": "Alpha pool size (number of factors to generate).", "default": 100},
+                  "corr_thresh": {"type": "number", "description": "Correlation threshold for filtering factors.", "default": 0.7},
+                  "ic_thresh": {"type": "number", "description": "IC (Information Coefficient) threshold for filtering factors.", "default": 0.03},
+                  "icir_thresh": {"type": "number", "description": "ICIR (IC Information Ratio) threshold for filtering factors.", "default": 0.1}
+                }
+              },
+              "task_name": {"type": "string", "default": "training", "minLength": 1, "maxLength": 100, "description": "Task name for the training job."}
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."},
+              "factor_file": {"type": "string", "description": "Path to the generated factor file or directory."}
+            },
+            "description": "Training completion info with factor file path. Runs synchronously and returns factor file path upon completion."
+          },
+          "example": {
+            "config_params": {
+              "instruments": "csi300",
+              "train_end_year": 2020,
+              "seed": 0,
+              "cuda": "0",
+              "save_name": "test",
+              "zoo_size": 100,
+              "corr_thresh": 0.7,
+              "ic_thresh": 0.03,
+              "icir_thresh": 0.1
+            },
+            "task_name": "csi300_training"
+          }
+        },
+        {
+          "name": "train_gfn_AlphaSAGE",
+          "description": "AlphaSAGE training tool. GFlowNet-based Alpha factor generation with deep RL; learns complex distributions for diverse, high-quality factors. Supports encoder types (Transformer/LSTM/GNN) with flexible configs. Runs asynchronously with task/log queries.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_file": {"type": "string", "description": "Config file path (optional). If provided, use its params; else use config_params."},
+              "config_params": {
+                "type": "object",
+                "description": "Optional training parameter dict. MCP interface only supports modifying seed, instrument, and pool_capacity. Other parameters use default values.",
+                "properties": {
+                  "seed": {"type": "integer", "default": 0, "description": "Random seed for reproducibility."},
+                  "instrument": {"type": "string", "default": "csi300", "description": "Universe, e.g., csi300/csi500."},
+                  "pool_capacity": {"type": "integer", "default": 50, "description": "Alpha pool capacity (factor count)."}
+                }
+              },
+              "task_name": {"type": "string", "default": "training", "minLength": 1, "maxLength": 100, "description": "Task name for the training job."}
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."}
+            },
+            "description": "Training launch info. Runs asynchronously; task/logs can be queried."
+          },
+          "example": {
+            "config_params": {
+              "seed": 0,
+              "instrument": "csi300",
+              "pool_capacity": 50
+            },
+            "task_name": "csi300_training"
+          }
+        },
+        {
+          "name": "train_GP_AlphaSAGE",
+          "description": "Genetic Programming-based Alpha factor mining. Evolves factor expressions via evolutionary algorithms to generate predictive factors. Supports seed_factors from mining_feedback to guide GP initial population. Runs asynchronously with task/log queries.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_file": {"type": "string", "description": "Config file path (optional). If provided, use its params; else use config_params."},
+              "config_params": {
+                "type": "object",
+                "description": "Optional training parameter dict.",
+                "properties": {
+                  "instruments": {"type": "string", "default": "csi300", "description": "Universe, e.g., csi300/csi500."},
+                  "seed": {"type": "integer", "default": 0, "description": "Random seed for reproducibility."},
+                  "train_end_year": {"type": "integer", "description": "Training end year."},
+                  "freq": {"type": "string", "default": "day", "description": "Data frequency, e.g., day/week."},
+                  "cuda": {"type": "string", "default": "0", "description": "CUDA device id (\"0\"/\"1\") or \"cpu\"."},
+                  "seed_factors": {
+                    "type": "array",
+                    "description": "Seed factor list from mining_feedback['suggested_seeds']. Each item can be a string (expression) or dict with 'expression', 'category', 'expected_effect' fields. These factors guide GP evolution as initial building blocks.",
+                    "items": {
+                      "oneOf": [
+                        {"type": "string", "description": "Factor expression string in AlphaSAGE format."},
+                        {
+                          "type": "object",
+                          "properties": {
+                            "expression": {"type": "string", "description": "Factor expression in AlphaSAGE format, e.g., 'Div(Sub(close, Ref(close, 5)), Ref(close, 5))'."},
+                            "category": {"type": "string", "description": "Factor category, e.g., 'momentum', 'volatility', 'liquidity'."},
+                            "expected_effect": {"type": "string", "description": "Expected effect description."}
+                          },
+                          "required": ["expression"]
+                        }
+                      ]
+                    }
+                  }
+                }
+              },
+              "task_name": {"type": "string", "default": "training", "minLength": 1, "maxLength": 100, "description": "Task name for the training job."}
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."},
+              "factor_file": {"type": "string", "description": "Path to generated factor file."}
+            },
+            "description": "Training launch info. Returns factor file path upon completion."
+          },
+          "example": {
+            "config_params": {
+              "instruments": "csi300",
+              "seed": 0,
+              "train_end_year": 2018,
+              "freq": "day",
+              "cuda": "0",
+              "seed_factors": [
+                {
+                  "expression": "Div(Sub(close, Ref(close, 5)), Ref(close, 5))",
+                  "category": "momentum",
+                  "expected_effect": "5-day momentum factor"
+                },
+                {
+                  "expression": "Div(volume, Ref(volume, 10))",
+                  "category": "liquidity",
+                  "expected_effect": "10-day volume ratio"
+                }
+              ]
+            },
+            "task_name": "csi300_training_with_seeds"
+          }
+        },
+        {
+          "name": "train_PPO_AlphaSAGE",
+          "description": "PPO-based Alpha factor generation. Uses RL (Proximal Policy Optimization) to generate/optimize factors with stable updates. Runs asynchronously with task/log queries.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "config_file": {"type": "string", "description": "Config file path (optional). If provided, use its params; else use config_params."},
+              "config_params": {
+                "type": "object",
+                "description": "Optional training parameter dict.",
+                "properties": {
+                  "seed": {"type": "integer", "default": 0, "description": "Random seed for reproducibility."},
+                  "instruments": {"type": "string", "default": "csi300", "description": "Universe, e.g., csi300/csi500."},
+                  "pool": {"type": "integer", "default": 20, "description": "Alpha pool capacity (factor count)."},
+                  "steps": {"type": "integer", "default": 200000, "description": "Training steps/iterations."},
+                  "train_end_year": {"type": "integer", "default": 2020, "minimum": 2000, "maximum": 2030, "description": "Training end year. Used to determine train/valid/test time splits."}
+                }
+              },
+              "task_name": {"type": "string", "default": "training", "minLength": 1, "maxLength": 100, "description": "Task name for the training job."}
+            }
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."}
+            },
+            "description": "Training launch info. Runs asynchronously; task/logs can be queried."
+          },
+          "example": {
+            "config_params": {
+              "seed": 0,
+              "instruments": "csi300",
+              "pool": 20,
+              "steps": 200000,
+              "train_end_year": 2020
+            },
+            "task_name": "ppo_training_csi300"
+          }
+        },
+        {
+          "name": "qlib_benchmark_runner",
+          "description": "Qlib Benchmark runner. Execute standard Qlib benchmark models via YAML configs (XGBoost/LightGBM/GRU/LSTM/Transformer, etc.). Scans benchmarks directory, supports updating provider_uri, and runs via qrun. Asynchronous with task/log queries.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "yaml_path": {"type": "string", "description": "YAML config path (required). Points to Qlib benchmark YAML, e.g., workflow_config_xgboost_Alpha158.yaml."},
+              "provider_uri": {"type": "string", "description": "provider_uri path (optional). If provided, updates YAML before run, e.g., \"~/.qlib/qlib_data/cn_data\"."},
+              "experiment_name": {"type": "string", "description": "Experiment name (optional) to distinguish runs."},
+              "task_name": {"type": "string", "default": "qlib_training", "minLength": 1, "maxLength": 100, "description": "Task name for the training job."}
+            },
+            "required": ["yaml_path"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."}
+            },
+            "description": "Training launch info. Runs asynchronously; task/logs can be queried."
+          },
+          "example": {
+            "yaml_path": "/data0/huangcheng/Qlib_Mcp/workspace/qlib_benchmark/benchmarks/XGBoost/workflow_config_xgboost_Alpha158.yaml",
+            "provider_uri": "~/.qlib/qlib_data/cn_data",
+            "experiment_name": "xgboost_alpha158_experiment",
+            "task_name": "xgboost_training"
+          }
+        },
+        {
+          "name": "qlib_benchmark_list_models",
+          "description": "List all available Qlib benchmark models. Scans benchmarks directory and returns model types (XGBoost/LightGBM/GRU/LSTM, etc.) with YAML paths for selection.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {},
+            "description": "No input parameters required."
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Execution status."},
+              "message": {"type": "string", "description": "Status message."}
+            },
+            "description": "Returns available benchmark model list (printed to console)."
+          },
+          "example": {}
+        }
+      ]
+    },
+    {
+      "tool_type": "Backtest & Metrics",
+      "description": "Evaluates models/factors via backtest and IC-style metrics (returns, Sharpe, drawdown, IC/IR). Not for data crawling, indicator computation, or model training; requires existing predictions/factors and historical data.",
+      "tools": [
+        {
+          "name": "calculate_ic",
+          "description": "Compute IC (Information Coefficient) metrics for factors. Returns IC mean/std, IR, Rank IC mean/std, Rank IR, IC win rate, etc., to assess predictive power and stability.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "formula": {"type": "string", "description": "Qlib factor expression, e.g., 'Ts_Mean($close, 10) / Ts_Mean($close, 30) - 1'. Supports time-series ops (Ts_Mean/Ts_Std) and cross-sectional ops."},
+              "instruments": {"type": "string", "enum": ["csi300", "csi500", "csi800", "csi1000", "csiall", "all"], "default": "csi300", "description": "Universe: csi300/csi500/csi800/csi1000/csiall/all."},
+              "start_date": {"type": "string", "format": "date", "default": "2020-01-01", "description": "Start date YYYY-MM-DD."},
+              "end_date": {"type": "string", "format": "date", "default": "2023-12-31", "description": "End date YYYY-MM-DD."},
+              "label_expr": {"type": "string", "default": "Ref($close, -2)/Ref($close, -1) - 1", "description": "Label expression for future return; default T+1 to T+2 return."},
+              "provider_uri": {"type": "string", "default": null, "description": "Qlib data path; auto-detects qlib_bin under project if not set."}
+            },
+            "required": ["formula"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "success": {"type": "boolean", "description": "Whether calculation succeeded."},
+              "metrics": {
+                "type": "object",
+                "description": "IC metric results.",
+                "properties": {
+                  "ic_mean": {"type": "number", "description": "IC mean – Pearson corr mean between factor and future return."},
+                  "ic_std": {"type": "number", "description": "IC std – dispersion of IC series."},
+                  "ir": {"type": "number", "description": "Information Ratio (IR) = IC mean / IC std."},
+                  "rank_ic_mean": {"type": "number", "description": "Rank IC mean – Spearman rank IC mean (robust to outliers)."},
+                  "rank_ic_std": {"type": "number", "description": "Rank IC std – std of rank IC series."},
+                  "rank_ir": {"type": "number", "description": "Rank IR = Rank IC mean / Rank IC std."},
+                  "ic_win_rate": {"type": "number", "description": "IC win rate – fraction of days with IC>0 (directional consistency)."}
+                }
+              },
+              "message": {"type": "string", "description": "Status message."},
+              "details": {"type": "object", "description": "Details such as parsed expression, stock count, record count, etc."}
+            }
+          },
+          "example": {
+            "input": {
+              "formula": "Ts_Mean($close, 10) / Ts_Mean($close, 30) - 1",
+              "instruments": "csi300",
+              "start_date": "2020-01-01",
+              "end_date": "2023-12-31",
+              "label_expr": "Ref($close, -2)/Ref($close, -1) - 1"
+            },
+            "output": {
+              "success": true,
+              "metrics": {
+                "ic_mean": 0.025,
+                "ic_std": 0.08,
+                "ir": 0.3125,
+                "rank_ic_mean": 0.028,
+                "rank_ic_std": 0.075,
+                "rank_ir": 0.373,
+                "ic_win_rate": 0.55
+              },
+              "message": "Calculation successful",
+              "details": {
+                "formula": "Ts_Mean($close, 10) / Ts_Mean($close, 30) - 1",
+                "instruments": "csi300",
+                "stock_count": 300,
+                "sample_count": 728,
+                "data_records": 218400
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "tool_type": "Knowledge Base",
+      "description": "Academic paper knowledge base search using semantic similarity. Search papers by research topics or questions. **Important**: SPECTER2 embedding model works best with English queries.",
+      "tools": [
+        {
+          "name": "search_papers",
+          "description": "Search academic paper knowledge base using semantic similarity. Returns papers most relevant to the query. **Important**: SPECTER2 model is optimized for English queries; Chinese queries will return an error.",
+          "inputSchema": {
+            "type": "object",
+            "properties": {
+              "query": {
+                "type": "string",
+                "description": "Natural language query describing research topic or question (**recommended: use English**). Example: 'urban air pollution health impact', 'machine learning in quantitative finance'"
+              },
+              "top_k": {
+                "type": "integer",
+                "default": 5,
+                "minimum": 1,
+                "maximum": 20,
+                "description": "Number of results to return"
+              },
+              "journal": {
+                "type": "string",
+                "description": "Journal filter (optional). Examples: Nature, Nature Communications, Nature Human Behaviour, Nature Climate Change, Nature Sustainability, Scientific Reports"
+              },
+              "year_start": {
+                "type": "integer",
+                "description": "Start year filter (optional), e.g., 2020"
+              },
+              "year_end": {
+                "type": "integer",
+                "description": "End year filter (optional), e.g., 2024"
+              }
+            },
+            "required": ["query"]
+          },
+          "outputSchema": {
+            "type": "object",
+            "properties": {
+              "status": {"type": "string", "description": "Status: 'success' or 'error'"},
+              "query": {"type": "string", "description": "Original query"},
+              "total_found": {"type": "integer", "description": "Total number of results found"},
+              "results": {
+                "type": "array",
+                "description": "List of search results",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "title": {"type": "string", "description": "Paper title"},
+                    "journal": {"type": "string", "description": "Journal name"},
+                    "publish_time": {"type": "string", "description": "Publication time"},
+                    "score": {"type": "number", "description": "Similarity score"},
+                    "text": {"type": "string", "description": "Matched text content"},
+                    "section_title": {"type": "string", "description": "Section title if applicable"},
+                    "key_topics": {"type": "array", "description": "Key topics list"},
+                    "pdf_link": {"type": "string", "description": "PDF link"},
+                    "paper_id": {"type": "string", "description": "Paper ID"}
+                  }
+                }
+              },
+              "error": {"type": "string", "description": "Error message if status is 'error'"}
+            }
+          },
+          "example": {
+            "query": "machine learning in quantitative finance",
+            "top_k": 5,
+            "year_start": 2020
+          }
+        }
+      ]
+    }
+  ]
+}
+
