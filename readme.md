@@ -1,0 +1,1 @@
+SynerQuant, a multi-agent collaborative framework for quantitative trading.
